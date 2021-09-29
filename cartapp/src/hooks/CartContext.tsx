@@ -1,4 +1,4 @@
-import React, { createContext, useState, useCallback, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useMemo } from 'react';
 
 interface IProduct {
   id: string;
@@ -10,9 +10,10 @@ interface IProduct {
 
 interface ICartContext {
   products: IProduct[];
-  addToCart(item: Omit<IProduct, 'quantity'>): void;
-  increment(id: string): void;
-  decrement(id: string): void;
+  addOrIncrementToCart(item: Omit<IProduct, 'quantity'>): void;
+  increment(index: number): void;
+  decrement(index: number): void;
+  totalInCart(): number
 }
 
 const CartContext = createContext<ICartContext | null>(null);
@@ -21,25 +22,40 @@ const CartProvider: React.FC = ({ children }) => {
   const [products, setProducts] = useState<IProduct[]>([]);
 
   useEffect(() => {
-    (async () => {
-      const productList = localStorage.getItem('@CartApp:products');
+    const productList = localStorage.getItem('@CartApp:products');
 
-      if (productList) {
-        setProducts(JSON.parse(productList));
-      }
-    })();
+    if (productList) {
+      setProducts(JSON.parse(productList));
+    }
   }, []);
 
-  const addToCart = useCallback(async (product: IProduct) => {
+  const validateItemInArray = (index: number): Boolean => {
+    if (index === -1) {
+      return false
+    }
+    return true
+  }
 
-    const checkProductInCart = products.find(item => item.id === product.id);
+  const addOrIncrementToCart = useCallback((data: IProduct) => {
+    const findInCart = products.findIndex(item => item.id === data.id)
 
-    if (checkProductInCart) {
-      const productIndex = products.findIndex(
-        item => item.id === product.id,
+    if (findInCart === -1) {
+      const newData = {
+        id: data.id,
+        name: data.name,
+        image: data.image,
+        price: data.price,
+        quantity: 1
+      }
+
+      setProducts([...products, newData]);
+
+      localStorage.setItem(
+        '@CartApp:products',
+        JSON.stringify(newData),
       );
-
-      products[productIndex].quantity += 1;
+    } else {
+      products[findInCart].quantity += 1
 
       setProducts([...products]);
 
@@ -47,61 +63,44 @@ const CartProvider: React.FC = ({ children }) => {
         '@CartApp:products',
         JSON.stringify(products),
       );
+    }
+  }, [products])
 
-    } else {
+  const increment = useCallback((index: number) => {
 
-      const newProducts = [
-        ...products,
-        {
-          id: product.id,
-          name: product.name,
-          image: product.image,
-          price: product.price,
-          quantity: 1
-        }
-      ];
-
-      setProducts(newProducts);
+    if (validateItemInArray(index)) {
+      products[index].quantity += 1
+      setProducts([...products]);
 
       localStorage.setItem(
         '@CartApp:products',
-        JSON.stringify(newProducts),
+        JSON.stringify(products),
       );
     }
-  }, [products]);
 
-  const increment = useCallback(async id => {
-    const productIndex = products.findIndex(item => item.id === id);
+  }, [products])
 
-    products[productIndex].quantity += 1;
+  const decrement = useCallback((index: number) => {
 
-    setProducts([...products]);
+    if (validateItemInArray(index)) {
+      products[index].quantity -= 1
 
-    localStorage.setItem(
-      '@CartApp:products',
-      JSON.stringify(products),
-    );
-  }, [products]);
+      if (products[index].quantity <= 0) {
+        products.splice(index, 1);
+      }
 
-  const decrement = useCallback(async id => {
-    const productIndex = products.findIndex(item => item.id === id);
+      setProducts([...products]);
 
-    products[productIndex].quantity -= 1;
-
-    if (products[productIndex].quantity <= 0) {
-      products.splice(productIndex, 1);
+      localStorage.setItem(
+        '@CartApp:products',
+        JSON.stringify(products),
+      );
     }
+  }, [products])
 
-    setProducts([...products]);
+  const totalInCart = useCallback(() => products.reduce((total, { quantity }) => quantity + total, 0,), [products])
 
-    localStorage.setItem(
-      '@CartApp:products',
-      JSON.stringify(products),
-    );
-  }, [products]);
-
-  const value = React.useMemo(() => ({ addToCart, increment, decrement, products }),[products, addToCart, increment, decrement],);
-
+  const value = useMemo(() => ({ addOrIncrementToCart, increment, decrement, products, totalInCart }), [products, addOrIncrementToCart, increment, decrement, totalInCart]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
