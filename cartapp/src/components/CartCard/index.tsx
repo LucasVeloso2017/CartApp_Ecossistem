@@ -7,31 +7,32 @@ interface IProduct {
     name: string
     price: string
     image: string
-    quantity:number
+    quantity: number
+    productIndex: number
 }
 
 interface ICardProps {
     product: IProduct
 }
 
-const CartCard: React.FC<ICardProps> = ({product}) => {
-    const{decrement,increment} = useCart()
+const CartCard: React.FC<ICardProps> = ({ product }) => {
+    const { decrement, increment } = useCart()
 
     return (
         <Container data-testid="cart-card">
             <CardHeader>
-                <img src={product.image} alt={product.name}/>
+                <img src={product.image} alt={product.name} />
             </CardHeader>
             <CardBody>
                 <div className="product-info">
                     <p className="name">{product.name}</p>
-                    <p className="price">{formatCurrency(Number(product.price),"pt-Br","BRL")}</p>
-                    <p className="subtotal">{formatCurrency((Number(product.price) * product.quantity),"pt-Br","BRL")}</p>
+                    <p className="price">{formatCurrency(Number(product.price), "pt-Br", "BRL")}</p>
+                    <p className="subtotal">{formatCurrency((Number(product.price) * product.quantity), "pt-Br", "BRL")}</p>
                 </div>
                 <div className="product-control">
-                    <ControlButton data-testid="cart-card-increment" onClick={()=> increment(product.id)} >+</ControlButton>
+                    <ControlButton data-testid="cart-card-increment" onClick={() => increment(product.productIndex)} >+</ControlButton>
                     <p className="quantity" data-testid="cart-card-quantity">{product.quantity}</p>
-                    <ControlButton onClick={()=> decrement(product.id)} data-testid="cart-card-decrement">-</ControlButton>
+                    <ControlButton onClick={() => decrement(product.productIndex)} data-testid="cart-card-decrement">-</ControlButton>
                 </div>
             </CardBody>
         </Container>

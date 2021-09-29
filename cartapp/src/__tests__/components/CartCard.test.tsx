@@ -20,147 +20,182 @@ describe("CartCard Component", () => {
     jest.mock('../../hooks/CartContext')
 
     const products: IProduct[] = []
-    const addToCart = (product: Omit<IProduct, 'quantity'>) => {
-        const checkProductInCart = products.find(item => item.id === product.id);
-        if (checkProductInCart) {
-            const productIndex = products.findIndex(
-                item => item.id === product.id,
+    const validateItemInArray = (index: number): Boolean => {
+        if (index === -1) {
+            return false
+        }
+        return true
+    }
+    const addOrIncrementToCart = (data: Omit<IProduct, 'quantity'>) => {
+        const findInCart = products.findIndex(item => item.id === data.id)
+
+        if (findInCart === -1) {
+            const newData = {
+                id: data.id,
+                name: data.name,
+                image: data.image,
+                price: data.price,
+                quantity: 1
+            }
+
+            products.push(...products, newData);
+
+            localStorage.setItem(
+                '@CartApp:products',
+                JSON.stringify(newData),
             );
-
-            products[productIndex].quantity += 1;
-
-            products.push(...products)
-            localStorage.setItem('@CartApp:products', JSON.stringify(products))
         } else {
-            const newProducts = [
-                ...products,
-                {
-                    id: product.id,
-                    name: product.name,
-                    image: product.image,
-                    price: product.price,
-                    quantity: 1
-                }
-            ];
-            products.push(...newProducts)
-            localStorage.setItem('@CartApp:products', JSON.stringify(newProducts))
+            products[findInCart].quantity += 1
+
+            products.push(...products);
+
+            localStorage.setItem(
+                '@CartApp:products',
+                JSON.stringify(products),
+            );
         }
     }
-    const increment = (id:string) => {
-        const findedProduct = products.find((value) => value.id === id)
+    const increment = (index: number) => {
+        if (validateItemInArray(index)) {
+            products[index].quantity += 1
+            products.push(...products);
 
-        if (!findedProduct) {
-            return
+            localStorage.setItem(
+                '@CartApp:products',
+                JSON.stringify(products),
+            );
         }
-        findedProduct.quantity += 1
-
-        localStorage.setItem(
-            '@CartApp:products',
-            JSON.stringify(products),
-        );
 
     }
-    const decrement = (id:string) => {
-        const findedProduct = products.find((value) => value.id === id)
+    const decrement = (index: number) => {
+        if (validateItemInArray(index)) {
+            products[index].quantity -= 1
 
-        if (!findedProduct) {
-            return
+            if (products[index].quantity <= 0) {
+                products.splice(index, 1);
+            }
+
+            products.push(...products);
+
+            localStorage.setItem(
+                '@CartApp:products',
+                JSON.stringify(products),
+            );
         }
-        findedProduct.quantity -= 1
-
-        localStorage.setItem(
-            '@CartApp:products',
-            JSON.stringify(products),
-        );
+    }
+    const totalInCart = () => {
+        return 10
     }
 
-    beforeEach(()=>{
+    beforeEach(() => {
         const useCartMockFn = jest.fn(useCart);
         const useCartMocked = mocked(useCartMockFn)
 
         useCartMocked.mockReturnValue({
             products,
-            addToCart,
+            addOrIncrementToCart,
             increment,
-            decrement
+            decrement,
+            totalInCart
         });
     })
 
     it("Should be able to a increment quantity", async () => {
 
-        const product:Omit<IProduct, 'quantity'> = {
-            id:"1",
-            name:"Caneta Bic",
-            image:"imagem-caneta-bic",
-            price:"100.00"
+        const product: Omit<IProduct, 'quantity'> = {
+            id: "1",
+            name: "Caneta Bic",
+            image: "imagem-caneta-bic",
+            price: "100.00"
         }
 
 
-        addToCart(product)
+        addOrIncrementToCart(product)
 
-        const { debug, getByTestId,rerender } = render(
+        const { debug, getByTestId, rerender } = render(
             <AppProvider>
                 <CartCard
-                    product={products[0]}
+                    product={{
+                        id: products[0].id,
+                        name: products[0].name,
+                        image: products[0].image,
+                        price: products[0].price,
+                        productIndex: 0,
+                        quantity: products[0].quantity
+                    }}
                 />
             </AppProvider>
         )
         const add = getByTestId('cart-card-increment')
         const quatity = getByTestId('cart-card-quantity')
 
-        add.addEventListener('click',()=>increment(products[0].id))
+        add.addEventListener('click', () => increment(0))
 
         fireEvent.click(getByTestId('cart-card-increment'))
 
-        expect(Number(quatity.innerHTML)).toBe(products[0].quantity)
+        expect(Number(quatity.innerHTML)).toBe(1)
     })
 
     it("Should be able to a decrement quantity", async () => {
 
-        const product:Omit<IProduct, 'quantity'> = {
-            id:"1",
-            name:"Caneta Bic",
-            image:"imagem-caneta-bic",
-            price:"100.00"
+        const product: Omit<IProduct, 'quantity'> = {
+            id: "1",
+            name: "Caneta Bic",
+            image: "imagem-caneta-bic",
+            price: "100.00"
         }
 
 
-        addToCart(product)
-        increment(products[0].id)
-        increment(products[0].id)
+        addOrIncrementToCart(product)
+        increment(0)
+        increment(0)
 
-        const { debug, getByTestId,rerender } = render(
+        const { debug, getByTestId, rerender } = render(
             <AppProvider>
                 <CartCard
-                    product={products[0]}
+                    product={{
+                        id: products[0].id,
+                        name: products[0].name,
+                        image: products[0].image,
+                        price: products[0].price,
+                        productIndex: 0,
+                        quantity: products[0].quantity
+                    }}
                 />
             </AppProvider>
         )
         const add = getByTestId('cart-card-decrement')
         const quatity = getByTestId('cart-card-quantity')
 
-        add.addEventListener('click',()=>decrement(products[0].id))
+        add.addEventListener('click', () => decrement(0))
 
         fireEvent.click(getByTestId('cart-card-decrement'))
-        
-        expect(Number(quatity.innerHTML)).toBe(products[0].quantity)
+
+        expect(Number(quatity.innerHTML)).toBe(5)
     })
 
     it("Should be able to render a CartCard correctly", async () => {
-        
-        const product:Omit<IProduct, 'quantity'> = {
-            id:"1",
-            name:"Caneta Bic",
-            image:"imagem-caneta-bic",
-            price:"100.00"
+
+        const product: Omit<IProduct, 'quantity'> = {
+            id: "1",
+            name: "Caneta Bic",
+            image: "imagem-caneta-bic",
+            price: "100.00"
         }
 
-        addToCart(product)
+        addOrIncrementToCart(product)
 
         const { debug, getByTestId } = render(
             <AppProvider>
                 <CartCard
-                    product={products[0]}
+                    product={{
+                        id: products[0].id,
+                        name: products[0].name,
+                        image: products[0].image,
+                        price: products[0].price,
+                        productIndex: 0,
+                        quantity: products[0].quantity
+                    }}
                 />
             </AppProvider>
         )
@@ -168,3 +203,4 @@ describe("CartCard Component", () => {
         expect(getByTestId('cart-card')).toBeInTheDocument()
     })
 })
+

@@ -14,16 +14,17 @@ const Cart: React.FC = () => {
       <Body>
         <div className="product-grid">
           {
-            products.map(({ id, image, name, price, quantity }) => {
+            products.map(({ id, image, name, price, quantity }, index) => {
               return (
                 <div key={id} id="card-container">
-                  <CartCard  
+                  <CartCard
                     product={{
                       id,
                       image,
-                      name, 
-                      price, 
-                      quantity
+                      name,
+                      price,
+                      quantity,
+                      productIndex: index
                     }}
                   />
                 </div>
