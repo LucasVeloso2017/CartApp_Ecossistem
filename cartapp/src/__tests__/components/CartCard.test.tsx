@@ -57,6 +57,7 @@ describe("CartCard Component", () => {
     }
     const increment = (index: number) => {
         if (validateItemInArray(index)) {
+
             products[index].quantity += 1
             products.push(...products);
 
